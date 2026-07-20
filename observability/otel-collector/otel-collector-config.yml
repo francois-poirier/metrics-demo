@@ -14,6 +14,12 @@ processors:
   batch:
     send_batch_size: 1000
     timeout: 10s
+  # Copy OTLP severity_text to a 'level' attribute for VictoriaLogs compatibility
+  transform/logs:
+    log_statements:
+      - context: log
+        statements:
+          - set(attributes["level"], severity_text)
 
 exporters:
   # Metrics -> VictoriaMetrics (OTLP ingestion)
@@ -49,5 +55,5 @@ service:
       exporters: [otlp_http/traces]
     logs:
       receivers: [otlp]
-      processors: [memory_limiter, batch]
+      processors: [memory_limiter, transform/logs, batch]
       exporters: [otlp_http/logs, otlp_http/loki_logs]
