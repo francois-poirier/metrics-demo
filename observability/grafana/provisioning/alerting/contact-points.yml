@@ -1,0 +1,5 @@
+apiVersion: 1
+
+# Keep notification routing configurable in the UI/environment.
+# This file intentionally does not define contact points.
+contactPoints: []
