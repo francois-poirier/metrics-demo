@@ -263,6 +263,39 @@ Two provisioned dashboards are available out of the box:
 1. **Spring Boot Application Metrics** — request rates, latencies, JVM stats
 2. **Application Reliability & SLOs** — error rate, availability, logs panel
 
+## Grafana Alert Rules
+
+Grafana now auto-provisions reliability alerts from
+`observability/grafana/provisioning/alerting/alert-rules.yml`.
+
+The current baseline focuses on the production signals you listed:
+
+| Alert | Severity | Threshold |
+|-------|----------|-----------|
+| Application Down | Critical | readiness < 1 for 2m |
+| HTTP 5xx Rate > 5% | Critical | 5xx / total requests > 5% for 5m |
+| JVM Heap > 95% | Critical | heap usage ratio > 95% for 3m |
+| DB Pool > 90% | Critical | active / max connections > 90% for 5m |
+| Thread Pool > 90% | Critical | busy / current Tomcat threads > 90% for 5m |
+| Heap > 85% | Warning | heap usage ratio > 85% for 5m |
+| p95 Latency > 1s | Warning | p95 request latency > 1s for 5m |
+| CPU > 80% | Warning | process CPU usage > 80% for 5m |
+| No Traffic | Warning | request rate < 0.01 rps for 10m |
+
+Notes:
+
+- `Application Down` is backed by the new `demo.application.ready` gauge.
+- `CPU > 80%` uses Micrometer's standard `process.cpu.usage` metric.
+- `DB Pool > 90%` and `Thread Pool > 90%` are provisioned with common Micrometer/Tomcat metric names and will become active once those meters are present.
+
+After updating alert files, restart Grafana to reload provisioning:
+
+```bash
+docker compose restart grafana
+# or
+podman compose restart grafana
+```
+
 ### Datasources
 
 | Name                             | Type                    | Purpose                          |
@@ -281,7 +314,7 @@ Two provisioned dashboards are available out of the box:
 ├── Dockerfile                      # Multi-stage build for the Spring Boot app
 ├── load-generator.sh               # Phased traffic generator (4 phases per cycle)
 ├── observability/
-│   ├── grafana/provisioning/       # Datasources & dashboards (auto-provisioned)
+│   ├── grafana/provisioning/       # Datasources, dashboards, and alert rules
 │   ├── loki/loki-config.yml        # Loki configuration
 │   └── otel-collector/             # OTel Collector pipeline config
 ├── src/main/java/.../

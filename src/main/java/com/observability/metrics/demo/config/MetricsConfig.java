@@ -2,6 +2,8 @@ package com.observability.metrics.demo.config;
 
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.boot.availability.ApplicationAvailability;
+import org.springframework.boot.availability.ReadinessState;
 import org.springframework.context.annotation.Configuration;
 
 import java.lang.management.ManagementFactory;
@@ -14,7 +16,7 @@ import java.lang.management.MemoryMXBean;
 @Configuration
 public class MetricsConfig {
 
-    public MetricsConfig(MeterRegistry registry) {
+    public MetricsConfig(MeterRegistry registry, ApplicationAvailability availability) {
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
 
         Gauge.builder("demo.jvm.heap.usage.ratio", memoryBean,
@@ -25,6 +27,11 @@ public class MetricsConfig {
                                     : 0.0;
                         })
                 .description("Ratio of used heap to max heap (0..1)")
+                .register(registry);
+
+        Gauge.builder("demo.application.ready", availability,
+                        state -> state.getReadinessState() == ReadinessState.ACCEPTING_TRAFFIC ? 1.0 : 0.0)
+                .description("Application readiness state as a numeric gauge (1=ready, 0=not ready)")
                 .register(registry);
     }
 }
